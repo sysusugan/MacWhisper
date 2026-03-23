@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Psst Free — On-Device Speech-to-Text for macOS</title>
+  <meta name="description" content="Privacy-first speech-to-text that lives in your menu bar. Powered by WhisperKit on Apple Silicon. No audio ever leaves your Mac.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-elevated: #111113;
+      --bg-subtle: #18181b;
+      --border: #27272a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #a78bfa;
+      --accent-dim: rgba(167, 139, 250, 0.12);
+      --accent-glow: rgba(167, 139, 250, 0.25);
+      --green: #4ade80;
+      --green-dim: rgba(74, 222, 128, 0.12);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 24px;
+      background: rgba(10, 10, 11, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* ─── SECTIONS ─── */
+    section {
+      padding: 120px 24px;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding-top: 180px;
+      padding-bottom: 140px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), #c4b5fd, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 48px;
+      line-height: 1.6;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0b;
+    }
+
+    .btn-primary:hover {
+      background: #b89dfc;
+      box-shadow: 0 0 32px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: var(--bg-subtle);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #222225;
+      border-color: #3f3f46;
+    }
+
+    .hero-meta {
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    /* ─── FEATURES ─── */
+    .features {
+      background: var(--bg);
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 64px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: #3f3f46;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(167, 139, 250, 0.15);
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ─── PRIVACY ─── */
+    .privacy {
+      position: relative;
+    }
+
+    .privacy-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 64px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .privacy-box::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .privacy-content .section-label {
+      margin-bottom: 16px;
+    }
+
+    .privacy-content h2 {
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .privacy-content p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .privacy-checks {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .privacy-checks li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .check-icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .check-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .privacy-visual {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .shield {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, var(--accent-dim), rgba(167, 139, 250, 0.03));
+      border: 1px solid rgba(167, 139, 250, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .shield svg {
+      width: 64px;
+      height: 64px;
+      opacity: 0.9;
+    }
+
+    .shield-ring {
+      position: absolute;
+      inset: -24px;
+      border-radius: 50%;
+      border: 1px dashed rgba(167, 139, 250, 0.15);
+    }
+
+    .shield-label {
+      margin-top: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+    }
+
+    /* ─── HOW IT WORKS ─── */
+    .how-it-works {
+      text-align: center;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px;
+      margin-top: 64px;
+    }
+
+    .step {
+      text-align: center;
+    }
+
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .step h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    /* ─── PRICING ─── */
+    .pricing {
+      text-align: center;
+    }
+
+    .pricing-card {
+      max-width: 420px;
+      margin: 48px auto 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pricing-card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .pricing-amount {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+    }
+
+    .pricing-period {
+      font-size: 15px;
+      color: var(--text-tertiary);
+      margin-bottom: 32px;
+    }
+
+    .pricing-features {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .pricing-features li svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--green);
+    }
+
+    .pricing .btn-primary {
+      width: 100%;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 48px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--text-secondary);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .privacy-box {
+        grid-template-columns: 1fr;
+        padding: 40px;
+        gap: 40px;
+      }
+
+      .privacy-visual {
+        order: -1;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      section {
+        padding: 80px 20px;
+      }
+
+      .hero {
+        padding-top: 140px;
+        padding-bottom: 100px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .privacy-box {
+        padding: 28px;
+      }
+
+      .pricing-card {
+        padding: 36px 28px;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="logo">Psst <span>Free</span></a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        macOS 14+ &middot; Apple Silicon
+      </div>
+      <h1>
+        Speech to text,<br>
+        <span class="highlight">entirely on your Mac.</span>
+      </h1>
+      <p class="hero-sub">
+        A menu bar app that transcribes your voice and pastes it anywhere.
+        Private by design &mdash; no audio ever leaves your device.
+      </p>
+      <div class="cta-group">
+        <a href="#pricing" class="btn btn-primary">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v13m0 0l-4-4m4 4l4-4"/></svg>
+          Download for Mac
+        </a>
+        <a href="#features" class="btn btn-secondary">Learn More</a>
+      </div>
+      <p class="hero-meta">Requires macOS Sonoma 14 or later. Optimized for Apple Silicon.</p>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+      <p class="section-desc">
+        Psst Free stays out of your way until you need it. Press a key, speak, and your words appear exactly where you need them.
+      </p>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M12 2a4 4 0 00-4 4v5a4 4 0 008 0V6a4 4 0 00-4-4z"/><path d="M19 11a7 7 0 01-14 0"/><path d="M12 19v3m-3 0h6"/></svg>
+          </div>
+          <h3>On-Device Transcription</h3>
+          <p>Powered by WhisperKit, optimized for Apple Silicon. Fast, accurate, and completely private.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><rect x="3" y="11" width="18" height="8" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <h3>Privacy First</h3>
+          <p>Zero network calls. No cloud APIs. Your audio never leaves your Mac &mdash; period.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4m4 0h4M6 12h3m5 0h4M6 16h5m3 0h4"/></svg>
+          </div>
+          <h3>Global Hotkeys</h3>
+          <p>Hold-to-record or toggle mode. Works system-wide, no matter which app is in focus.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><path d="M9 14l2 2 4-4"/></svg>
+          </div>
+          <h3>Auto-Paste Anywhere</h3>
+          <p>Transcribed text is automatically pasted into whatever app you're working in. No copy-paste needed.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h3>Writing Styles</h3>
+          <p>Professional, casual, bullet points, and more. Customize how your speech is formatted.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="20" cy="18" r="2"/></svg>
+          </div>
+          <h3>Vocabulary &amp; Snippets</h3>
+          <p>Teach it your jargon. Expand abbreviations into full phrases. Custom text replacements on the fly.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section class="privacy" id="privacy">
+    <div class="container">
+      <div class="privacy-box">
+        <div class="privacy-content">
+          <p class="section-label">Privacy</p>
+          <h2>Your voice stays<br>on your Mac.</h2>
+          <p>
+            Psst Free processes everything locally using WhisperKit, Apple's on-device speech recognition framework.
+            There are no servers, no accounts, and no telemetry.
+          </p>
+          <ul class="privacy-checks">
+            <li>
+              <span class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#4ade80" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+              No audio uploaded, ever
+            </li>
+            <li>
+              <span class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#4ade80" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+              No cloud APIs or third-party services
+            </li>
+            <li>
+              <span class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#4ade80" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+              No accounts or sign-ups required
+            </li>
+            <li>
+              <span class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#4ade80" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+              All settings stored locally in UserDefaults
+            </li>
+          </ul>
+        </div>
+        <div class="privacy-visual">
+          <div class="shield">
+            <div class="shield-ring"></div>
+            <svg fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="shield-label">100% On-Device Processing</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <p class="section-label">How It Works</p>
+      <h2 class="section-title">Three steps. Zero friction.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Press Your Hotkey</h3>
+          <p>Hold a key to record, or toggle on and off. Fully configurable global shortcuts.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Speak Naturally</h3>
+          <p>WhisperKit transcribes your speech in real time, directly on your Mac's neural engine.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Text Appears Instantly</h3>
+          <p>Formatted text is pasted into whatever app you're using. Emails, docs, messages &mdash; anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <p class="section-label">Pricing</p>
+      <h2 class="section-title">One price. Yours forever.</h2>
+      <p class="section-desc" style="margin: 0 auto;">No subscriptions. No recurring fees. Pay once and own it.</p>
+      <div class="pricing-card">
+        <div class="pricing-amount">$29</div>
+        <div class="pricing-period">One-time purchase &middot; Free updates</div>
+        <ul class="pricing-features">
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            On-device WhisperKit transcription
+          </li>
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            All transcription modes &amp; writing styles
+          </li>
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            Custom vocabulary &amp; snippet expansion
+          </li>
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            Global hotkeys with hold &amp; toggle modes
+          </li>
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            Auto-paste into any application
+          </li>
+          <li>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            Future updates included
+          </li>
+        </ul>
+        <a href="#" class="btn btn-primary">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v13m0 0l-4-4m4 4l4-4"/></svg>
+          Download Psst Free
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        &copy; 2026 Douglas Anthony Silkstone / Finmag.cz. All rights reserved.
+      </div>
+      <ul class="footer-links">
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="mailto:hello@finmag.cz">Contact</a></li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>

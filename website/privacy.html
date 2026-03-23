@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Psst Free</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0e0e10;
+            --surface: #1a1a1f;
+            --border: #2a2a30;
+            --text: #e0e0e6;
+            --text-muted: #8a8a96;
+            --accent: #7c6bf0;
+            --accent-dim: #5a4dc7;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        nav {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        nav .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        nav .logo span {
+            color: var(--accent);
+        }
+
+        nav .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-left: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        nav .nav-links a:hover { color: var(--text); }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .effective-date {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-box h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        .summary-box p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        ul {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        li strong {
+            color: var(--text);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 2rem 1rem 4rem; }
+            h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">Psst <span>Free</span></a>
+        <div class="nav-links">
+            <a href="/privacy.html">Privacy</a>
+            <a href="/terms.html">Terms</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p class="effective-date">Effective date: March 22, 2026</p>
+
+        <div class="summary-box">
+            <h2>The short version</h2>
+            <p>Psst Free processes your speech entirely on your device. No audio leaves your Mac. We don't collect analytics, don't track you, and don't run any telemetry. Your data stays yours.</p>
+        </div>
+
+        <h2>Who we are</h2>
+        <p>Psst Free is operated by Douglas Anthony Silkstone, a registered business in the Czech Republic (I&#268;O: 10911243, listed in the ARES business registry), operating under Finmag.cz.</p>
+        <p>If you have questions about this policy, you can reach us at the contact information on <a href="https://finmag.cz">finmag.cz</a>.</p>
+
+        <h2>What the app does</h2>
+        <p>Psst Free is a macOS menu bar application that converts your speech to text. You press a hotkey, speak, and the transcribed text is pasted into whatever app you're using. That's it.</p>
+
+        <h2>How audio processing works</h2>
+        <p>This is the most important part: <strong>all audio processing happens entirely on your device</strong>. Psst Free uses <a href="https://github.com/argmaxinc/WhisperKit">WhisperKit</a>, an on-device speech recognition engine. Your audio is captured by your Mac's microphone, transcribed locally using a machine learning model running on your hardware, and never transmitted anywhere.</p>
+        <p>No audio data is sent to any server — not ours, not Apple's, not anyone's.</p>
+
+        <h2>System permissions</h2>
+        <p>Psst Free requests the following macOS permissions, each for a specific functional reason:</p>
+        <ul>
+            <li><strong>Microphone</strong> — to capture your voice for transcription. Audio is processed locally and discarded after transcription.</li>
+            <li><strong>Accessibility</strong> — to register global hotkeys that work regardless of which app is in the foreground.</li>
+            <li><strong>Input Monitoring</strong> — to capture hotkey events (key presses) system-wide.</li>
+            <li><strong>Clipboard access</strong> — to paste the transcribed text into the active application via the system clipboard.</li>
+        </ul>
+        <p>None of these permissions are used to monitor, log, or transmit your activity.</p>
+
+        <h2>Data stored on your device</h2>
+        <p>Your settings and preferences (selected transcription model, hotkey configuration, writing style, custom vocabulary, snippets) are stored in macOS UserDefaults — a local storage mechanism on your Mac. This data is never synced to any server.</p>
+        <p>Psst Free does not maintain any logs, databases, or files containing your transcribed text. Once text is pasted, it exists only in the target application and your clipboard.</p>
+
+        <h2>Data we collect</h2>
+        <p><strong>None.</strong> As of this writing, Psst Free has:</p>
+        <ul>
+            <li>No analytics</li>
+            <li>No telemetry</li>
+            <li>No crash reporting</li>
+            <li>No tracking of any kind</li>
+            <li>No user accounts</li>
+            <li>No server-side components</li>
+        </ul>
+        <p>The app makes network requests only to download the WhisperKit speech recognition model on first use (or when you switch models). These downloads come from Apple's ML model hosting and do not include any identifying information about you.</p>
+
+        <h2>Future licensing</h2>
+        <p>If we introduce a licensing or purchase system in the future, it may require an email address to complete a purchase and a license key for activation. In that case:</p>
+        <ul>
+            <li>We will collect only the minimum information needed (email, license key)</li>
+            <li>License validation will check the key against a server — no other data will be transmitted</li>
+            <li>We will update this policy before any such change takes effect</li>
+        </ul>
+
+        <h2>Third parties</h2>
+        <p>Psst Free does not share any data with third parties because there is no data to share. We don't use third-party SDKs for analytics, advertising, or tracking.</p>
+
+        <h2>Children's privacy</h2>
+        <p>Psst Free does not knowingly collect any information from anyone, including children under 13. Since no data is collected, no special provisions are needed.</p>
+
+        <h2>Changes to this policy</h2>
+        <p>If we make meaningful changes to this policy, we will update the effective date at the top. If a change involves collecting data that we currently don't collect, we will make reasonable efforts to notify users (through the app or website) before the change takes effect.</p>
+
+        <h2>Your rights</h2>
+        <p>Under GDPR and other privacy frameworks, you have the right to access, correct, and delete your personal data. Since Psst Free does not collect or store personal data on any server, there is nothing to request. All your data lives on your Mac and is fully under your control.</p>
+        <p>If this ever changes, we will provide clear mechanisms to exercise your rights.</p>
+
+        <footer>
+            <p>Douglas Anthony Silkstone &middot; I&#268;O: 10911243 &middot; Czech Republic &middot; <a href="https://finmag.cz">Finmag.cz</a></p>
+        </footer>
+    </div>
+</body>
+</html>

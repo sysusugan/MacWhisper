@@ -3,6 +3,7 @@ import CoreAudio
 
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject private var updaterManager = UpdaterManager.shared
 
     var body: some View {
         // Recording toggle
@@ -116,12 +117,12 @@ struct MenuBarView: View {
 
         Divider()
 
-        Text("Version 1.0")
+        Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")")
 
         Button("Check for Updates...") {
-            // Placeholder
+            updaterManager.checkForUpdates()
         }
-        .disabled(true)
+        .disabled(!updaterManager.canCheckForUpdates)
 
         Button("Quit") {
             NSApplication.shared.terminate(nil)

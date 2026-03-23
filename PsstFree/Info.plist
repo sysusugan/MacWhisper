@@ -24,5 +24,11 @@
     <string>Psst Free needs microphone access to transcribe your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Psst Free uses speech recognition to convert your voice to text.</string>
+    <key>SUFeedURL</key>
+    <string>https://psstfree.com/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>SPARKLE_ED25519_PUBLIC_KEY_PLACEHOLDER</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
 </dict>
 </plist>

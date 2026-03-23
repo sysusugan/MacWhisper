@@ -88,19 +88,18 @@ struct SnippetsSettingsView: View {
             // Content
             if filteredSnippets.isEmpty {
                 VStack(spacing: 8) {
-                    Spacer()
                     Image(systemName: "text.quote")
                         .font(.system(size: 28))
                         .foregroundColor(.secondary)
+                        .padding(.top, 24)
                     Text(snippets.isEmpty ? "No snippets yet" : "No matching snippets")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Text(snippets.isEmpty ? "Click \"Add new\" to create a text expansion shortcut." : "Try a different search term.")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Spacer()
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .top)
             } else {
                 // Column headers
                 HStack(spacing: 8) {

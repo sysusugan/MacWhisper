@@ -63,6 +63,16 @@ if [ -d "${BUILD_DIR}/PsstFree_PsstFree.bundle" ]; then
     cp -R "${BUILD_DIR}/PsstFree_PsstFree.bundle" "${APP_DIR}/Contents/Resources/"
 fi
 
+# Copy Sparkle.framework into Frameworks/
+SPARKLE_FW=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+if [ -d "$SPARKLE_FW" ]; then
+    mkdir -p "${APP_DIR}/Contents/Frameworks"
+    cp -R "$SPARKLE_FW" "${APP_DIR}/Contents/Frameworks/"
+fi
+
+# Step 4b: Fix rpath so the binary finds Sparkle.framework in Frameworks/
+install_name_tool -add_rpath @executable_path/../Frameworks "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}" 2>/dev/null || true
+
 # Step 5: Sign with dev certificate
 echo ""
 echo "=== Signing app with '$CERT_NAME' ==="

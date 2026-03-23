@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service — Psst Free</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0e0e10;
+            --surface: #1a1a1f;
+            --border: #2a2a30;
+            --text: #e0e0e6;
+            --text-muted: #8a8a96;
+            --accent: #7c6bf0;
+            --accent-dim: #5a4dc7;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        nav {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        nav .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        nav .logo span {
+            color: var(--accent);
+        }
+
+        nav .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-left: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        nav .nav-links a:hover { color: var(--text); }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .effective-date {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-box h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        .summary-box p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        li strong {
+            color: var(--text);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 2rem 1rem 4rem; }
+            h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">Psst <span>Free</span></a>
+        <div class="nav-links">
+            <a href="/privacy.html">Privacy</a>
+            <a href="/terms.html">Terms</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Terms of Service</h1>
+        <p class="effective-date">Effective date: March 22, 2026</p>
+
+        <div class="summary-box">
+            <h2>The short version</h2>
+            <p>Psst Free is a free macOS app for speech-to-text. Use it however you like. It's provided as-is — we do our best to make it work well, but we can't guarantee perfection. Be reasonable, and we will be too.</p>
+        </div>
+
+        <h2>Agreement</h2>
+        <p>By downloading, installing, or using Psst Free ("the App"), you agree to these terms. If you don't agree, don't use the App. It's that simple.</p>
+        <p>These terms constitute a legal agreement between you and Douglas Anthony Silkstone (I&#268;O: 10911243, Czech Republic), operating under Finmag.cz ("we", "us", "our").</p>
+
+        <h2>What the App does</h2>
+        <p>Psst Free is a macOS menu bar application that captures audio from your microphone, transcribes it to text on your device using WhisperKit, and pastes the result into the active application. All processing happens locally on your Mac.</p>
+
+        <h2>License</h2>
+        <p>We grant you a personal, non-exclusive, non-transferable, revocable license to use Psst Free on any Mac computers you own or control. This license is free of charge.</p>
+        <p>You may <strong>not</strong>:</p>
+        <ul>
+            <li>Reverse-engineer, decompile, or disassemble the App (except where applicable law explicitly permits it)</li>
+            <li>Redistribute, sell, lease, or sublicense the App</li>
+            <li>Remove or alter any proprietary notices in the App</li>
+            <li>Use the App in any way that violates applicable law</li>
+        </ul>
+
+        <h2>System permissions</h2>
+        <p>Psst Free requires certain macOS permissions to function (Microphone, Accessibility, Input Monitoring). These are standard system permissions controlled entirely by macOS — you grant them through System Settings, and you can revoke them at any time.</p>
+        <p>We explain why each permission is needed in our <a href="/privacy.html">Privacy Policy</a>. The App may not function correctly (or at all) if required permissions are not granted.</p>
+
+        <h2>Transcription accuracy</h2>
+        <p>Speech recognition is performed by WhisperKit, an on-device machine learning model. Like all speech recognition technology, it is not perfect. Transcription accuracy depends on factors including audio quality, background noise, accent, language, and the specific model you choose.</p>
+        <p>You are responsible for reviewing transcribed text before relying on it. We do not guarantee the accuracy of any transcription. Don't use Psst Free as the sole input method for anything where errors could cause harm (legal documents, medical records, financial transactions, etc.) without reviewing the output.</p>
+
+        <h2>Intellectual property</h2>
+        <p>Psst Free and its original content, features, and functionality are owned by Douglas Anthony Silkstone. The App is protected by copyright and other intellectual property laws.</p>
+        <p>The text you create using the App is yours. We claim no rights over your transcribed content.</p>
+
+        <h2>No warranty</h2>
+        <p>Psst Free is provided <strong>"as is" and "as available"</strong> without warranties of any kind, whether express or implied, including but not limited to:</p>
+        <ul>
+            <li>Merchantability or fitness for a particular purpose</li>
+            <li>That the App will be uninterrupted, error-free, or secure</li>
+            <li>That transcriptions will be accurate or complete</li>
+            <li>That the App will be compatible with future macOS versions</li>
+        </ul>
+        <p>We do our best to build reliable software, but we can't promise it will work perfectly in every situation.</p>
+
+        <h2>Limitation of liability</h2>
+        <p>To the maximum extent permitted by applicable law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or goodwill, arising from:</p>
+        <ul>
+            <li>Your use of or inability to use the App</li>
+            <li>Inaccurate transcriptions</li>
+            <li>Unauthorized access to your device (which is outside our control)</li>
+            <li>Any other matter relating to the App</li>
+        </ul>
+        <p>Since the App is provided free of charge, our total liability for any claim is limited to zero (0) CZK. If a paid version or feature is introduced, liability for that portion will be limited to the amount you paid in the 12 months preceding the claim.</p>
+
+        <h2>Your responsibilities</h2>
+        <p>You agree to:</p>
+        <ul>
+            <li>Use the App in compliance with all applicable laws</li>
+            <li>Not use the App to transcribe conversations without the consent of all parties where required by law</li>
+            <li>Review transcribed text for accuracy before relying on it</li>
+            <li>Ensure your use of the App complies with any workplace or organizational policies that apply to you</li>
+        </ul>
+
+        <h2>Recording consent</h2>
+        <p>This is important: many jurisdictions require consent from all parties before recording a conversation. Psst Free gives you the ability to capture and transcribe audio. <strong>It is your responsibility</strong> to comply with all applicable wiretapping, eavesdropping, and recording consent laws in your jurisdiction. We are not liable for your misuse of the App.</p>
+
+        <h2>Updates and changes</h2>
+        <p>We may release updates to the App at our discretion. We are not obligated to provide updates, support, or maintenance. We may also modify these terms — if we make material changes, we will update the effective date and make reasonable efforts to notify you.</p>
+        <p>Continued use of the App after changes to these terms constitutes acceptance of the new terms.</p>
+
+        <h2>Termination</h2>
+        <p>You can stop using the App at any time by uninstalling it. We may terminate or suspend your license if you violate these terms. Upon termination, you must stop using and delete all copies of the App.</p>
+
+        <h2>Governing law</h2>
+        <p>These terms are governed by and construed in accordance with the laws of the Czech Republic. Any disputes will be resolved in the competent courts of the Czech Republic.</p>
+        <p>If you are a consumer in the European Union, you retain any mandatory consumer protection rights granted by the laws of your country of residence.</p>
+
+        <h2>Severability</h2>
+        <p>If any provision of these terms is found to be unenforceable, the remaining provisions will continue in full effect. The unenforceable provision will be modified to the minimum extent necessary to make it enforceable.</p>
+
+        <h2>Contact</h2>
+        <p>For questions about these terms, reach us through the contact information at <a href="https://finmag.cz">finmag.cz</a>.</p>
+
+        <footer>
+            <p>Douglas Anthony Silkstone &middot; I&#268;O: 10911243 &middot; Czech Republic &middot; <a href="https://finmag.cz">Finmag.cz</a></p>
+        </footer>
+    </div>
+</body>
+</html>

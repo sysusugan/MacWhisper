@@ -1,20 +1,27 @@
 #!/bin/bash
 # =============================================================================
-# RELEASE BUILD SCRIPT (ad-hoc signing)
+# RELEASE BUILD SCRIPT
 #
-# This script builds a release .app bundle and DMG with ad-hoc code signing
-# (codesign --sign -). Ad-hoc signing generates a new signature every build,
-# which means macOS TCC permissions (Accessibility, Input Monitoring, etc.)
-# will be invalidated after each rebuild.
+# Supports two signing modes:
+#   1. Developer ID (for notarized distribution): requires DEVELOPER_ID env var
+#   2. Ad-hoc (for local testing): used when DEVELOPER_ID is not set
 #
-# For DEVELOPMENT builds that preserve TCC permissions across rebuilds,
-# use the dev build script instead:
+# Usage:
+#   # Ad-hoc (local only, no notarization)
+#   ./build-app.sh
 #
-#   ./scripts/dev-build.sh          # build only
-#   ./scripts/dev-build.sh --run    # build and launch
+#   # Developer ID signed + notarized
+#   DEVELOPER_ID="Developer ID Application: Douglas Anthony Silkstone (TEAM_ID)" \
+#   APPLE_ID="your@email.com" \
+#   TEAM_ID="YOUR_TEAM_ID" \
+#   APP_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
+#   ./build-app.sh
 #
-# The dev script uses a stable self-signed certificate ("PsstFree Dev") so
-# permissions persist. Run ./scripts/setup-dev-cert.sh first to create it.
+# Environment variables for notarization:
+#   DEVELOPER_ID  — Full signing identity (from `security find-identity -v`)
+#   APPLE_ID      — Apple ID email for notarytool
+#   TEAM_ID       — Apple Developer Team ID
+#   APP_PASSWORD   — App-specific password (generate at appleid.apple.com)
 # =============================================================================
 set -e
 
@@ -22,7 +29,21 @@ APP_NAME="Psst Free"
 BUNDLE_NAME="PsstFree"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-DMG_NAME="PsstFree-1.0.0"
+VERSION=$(defaults read "$(pwd)/PsstFree/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")
+DMG_NAME="PsstFree-${VERSION}"
+
+echo "=== Building Psst Free v${VERSION} ==="
+
+# Determine signing mode
+if [ -n "$DEVELOPER_ID" ]; then
+    SIGN_MODE="developer-id"
+    echo "=== Signing mode: Developer ID ==="
+    echo "    Identity: ${DEVELOPER_ID}"
+else
+    SIGN_MODE="adhoc"
+    echo "=== Signing mode: Ad-hoc (local only) ==="
+    echo "    Set DEVELOPER_ID env var for distribution builds"
+fi
 
 echo "=== Building release binary ==="
 swift build -c release
@@ -43,45 +64,83 @@ if [ -d "${BUILD_DIR}/PsstFree_PsstFree.bundle" ]; then
     cp -R "${BUILD_DIR}/PsstFree_PsstFree.bundle" "${APP_DIR}/Contents/Resources/"
 fi
 
-# Sign with entitlements (ad-hoc for local distribution)
-# IMPORTANT: Sign the executable directly with entitlements first,
-# then sign the outer bundle. Using --deep alone may not embed
-# entitlements correctly on the main executable with ad-hoc signing.
+# --- Code Signing ---
 echo "=== Signing app ==="
-codesign --force --sign - \
-    --entitlements PsstFree/PsstFree.entitlements \
-    "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
-codesign --force --sign - \
-    --entitlements PsstFree/PsstFree.entitlements \
-    "${APP_DIR}"
+if [ "$SIGN_MODE" = "developer-id" ]; then
+    # Developer ID signing with hardened runtime (required for notarization)
+    codesign --force --options runtime --timestamp \
+        --sign "$DEVELOPER_ID" \
+        --entitlements PsstFree/PsstFree.entitlements \
+        "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
-# Verify entitlements are embedded
-echo "=== Verifying entitlements ==="
+    codesign --force --options runtime --timestamp \
+        --sign "$DEVELOPER_ID" \
+        --entitlements PsstFree/PsstFree.entitlements \
+        "${APP_DIR}"
+else
+    # Ad-hoc signing (local testing only)
+    codesign --force --sign - \
+        --entitlements PsstFree/PsstFree.entitlements \
+        "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
+
+    codesign --force --sign - \
+        --entitlements PsstFree/PsstFree.entitlements \
+        "${APP_DIR}"
+fi
+
+# Verify
+echo "=== Verifying code signature ==="
+codesign --verify --verbose=2 "${APP_DIR}" 2>&1 || true
 codesign -d --entitlements - "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}" 2>&1 || true
 
+# --- Create DMG ---
 echo "=== Creating DMG ==="
-# Create a temporary DMG folder
 DMG_TEMP="dist/dmg_temp"
 mkdir -p "${DMG_TEMP}"
 cp -R "${APP_DIR}" "${DMG_TEMP}/"
-
-# Create a symlink to Applications
 ln -s /Applications "${DMG_TEMP}/Applications"
 
-# Create DMG
 hdiutil create -volname "${APP_NAME}" \
     -srcfolder "${DMG_TEMP}" \
     -ov -format UDZO \
     "dist/${DMG_NAME}.dmg"
 
-# Cleanup
 rm -rf "${DMG_TEMP}"
+
+# --- Notarization (Developer ID only) ---
+if [ "$SIGN_MODE" = "developer-id" ]; then
+    if [ -n "$APPLE_ID" ] && [ -n "$TEAM_ID" ] && [ -n "$APP_PASSWORD" ]; then
+        echo "=== Submitting for notarization ==="
+        xcrun notarytool submit "dist/${DMG_NAME}.dmg" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$TEAM_ID" \
+            --password "$APP_PASSWORD" \
+            --wait
+
+        echo "=== Stapling notarization ticket ==="
+        xcrun stapler staple "dist/${DMG_NAME}.dmg"
+
+        echo ""
+        echo "=== Notarization complete! ==="
+    else
+        echo ""
+        echo "=== WARNING: Developer ID signed but NOT notarized ==="
+        echo "    Missing APPLE_ID, TEAM_ID, or APP_PASSWORD env vars."
+        echo "    To notarize manually:"
+        echo "    xcrun notarytool submit dist/${DMG_NAME}.dmg \\"
+        echo "        --apple-id YOUR_EMAIL --team-id TEAM_ID --password APP_PASSWORD --wait"
+        echo "    xcrun stapler staple dist/${DMG_NAME}.dmg"
+    fi
+fi
 
 echo ""
 echo "=== Done! ==="
-echo "App:  dist/${APP_NAME}.app"
-echo "DMG:  dist/${DMG_NAME}.dmg"
+echo "App:     dist/${APP_NAME}.app"
+echo "DMG:     dist/${DMG_NAME}.dmg"
+echo "Version: ${VERSION}"
 echo ""
-echo "To install: open the DMG and drag to Applications."
-echo "Note: Users will need to grant Accessibility + Microphone permissions on first launch."
+if [ "$SIGN_MODE" = "adhoc" ]; then
+    echo "Note: Ad-hoc signed — for distribution, rebuild with DEVELOPER_ID set."
+fi
+echo "Users will need to grant Accessibility + Microphone permissions on first launch."

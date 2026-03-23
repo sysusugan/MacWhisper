@@ -127,8 +127,6 @@ struct HomeSettingsTab: View {
     @EnvironmentObject var appState: AppState
     @Binding var selectedTab: SettingsTab
     @State private var microphoneName: String = "MacBook Pro Microphone"
-    @State private var wordsThisWeek: Int = 0
-    @State private var streakWeeks: Int = 0
     @State private var recentTranscriptions: [TranscriptionRecord] = []
 
     private var hasHistory: Bool {
@@ -153,20 +151,9 @@ struct HomeSettingsTab: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Welcome + Stats row
-                HStack(alignment: .top) {
-                    Text("Welcome back")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    HStack(spacing: 16) {
-                        HomeStatBadge(icon: "flame.fill", value: "\(streakWeeks) weeks", color: .orange)
-                        HomeStatBadge(icon: "rocket.fill", value: "\(wordsThisWeek) words", color: .blue)
-                        HomeStatBadge(icon: "trophy.fill", value: "-- WPM", color: .yellow)
-                    }
-                }
+                Text("Welcome back")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.primary)
 
                 if hasHistory {
                     // Timeline of recent transcriptions
@@ -287,62 +274,13 @@ struct HomeSettingsTab: View {
     private func loadTranscriptionData() {
         let records = HistorySettingsView.loadHistory()
         guard !records.isEmpty else {
-            wordsThisWeek = 0
-            streakWeeks = 0
             recentTranscriptions = []
             return
         }
 
-        let calendar = Calendar.current
-        let now = Date()
-
-        // Words this week
-        if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) {
-            let recentRecords = records.filter { $0.date >= weekAgo }
-            wordsThisWeek = recentRecords.reduce(0) { count, record in
-                count + record.text.split(separator: " ").count
-            }
-        }
-
-        // Streak calculation (consecutive weeks with at least one transcription)
-        var weeks = 0
-        var checkDate = now
-        while let weekStart = calendar.date(byAdding: .day, value: -7, to: checkDate) {
-            let hasRecords = records.contains { $0.date >= weekStart && $0.date <= checkDate }
-            if hasRecords {
-                weeks += 1
-                checkDate = weekStart
-            } else {
-                break
-            }
-        }
-        streakWeeks = weeks
-
         // Recent transcriptions (last 20, sorted newest first)
         let sorted = records.sorted { $0.date > $1.date }
         recentTranscriptions = Array(sorted.prefix(20))
-    }
-}
-
-// MARK: - Home Stat Badge
-
-private struct HomeStatBadge: View {
-    let icon: String
-    let value: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(.system(size: 12))
-                .foregroundColor(color)
-            Text(value)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.primary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.08)))
     }
 }
 
@@ -392,3 +330,4 @@ extension GetStartedCard where Trailing == EmptyView {
         self.trailing = EmptyView()
     }
 }
+
