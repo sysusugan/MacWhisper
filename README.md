@@ -5,7 +5,7 @@
 ![WhisperKit](https://img.shields.io/badge/WhisperKit-on--device_AI-333?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-2ea44f?style=flat-square)
 ![Price](https://img.shields.io/badge/Price-Free_Forever-8b5cf6?style=flat-square)
-[![Download](https://img.shields.io/github/v/release/dougwithseismic/psst-free?style=flat-square&label=Download&color=0969da)](https://github.com/dougwithseismic/psst-free/releases/latest)
+[![Download v1.0.1](https://img.shields.io/badge/Download-v1.0.1-0969da?style=flat-square&logo=github&logoColor=white)](https://github.com/dougwithseismic/psst-free/releases/tag/v1.0.1)
 
 **Free, open-source alternative to [WisperFlow](https://wisperflow.com) and [SuperWhisper](https://superwhisper.com).**
 
@@ -78,6 +78,10 @@ swift build -c debug
 ## Why?
 
 WisperFlow and SuperWhisper are great tools — but they cost money for something your Mac can do natively. Psst Free gives you the same core experience for free, with no strings attached.
+
+## Built by
+
+[withseismic.com](https://withseismic.com)
 
 ## License
 

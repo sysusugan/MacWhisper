@@ -69,13 +69,16 @@ class TextFormatter {
         return String(chars)
     }
 
-    /// Apply formatting based on the selected mode
+    /// Apply formatting based on the selected mode.
+    /// Snippet expansions are protected from writing style changes (capitalization, punctuation)
+    /// by using placeholder tokens during style application, then restoring the original expansion text.
     func format(_ text: String, mode: TranscriptionMode, customModes: [CustomMode]) -> String {
         // First apply vocabulary replacements
         var result = applyVocabularyReplacements(text)
 
-        // Then apply snippet expansions
-        result = applySnippetExpansions(result)
+        // Then apply snippet expansions, collecting placeholders
+        var snippetPlaceholders: [String: String] = [:]
+        result = applySnippetExpansions(result, placeholders: &snippetPlaceholders)
 
         // Then apply basic cleanup
         result = cleanupTranscription(result)
@@ -90,8 +93,13 @@ class TextFormatter {
             }
         }
 
-        // Finally apply writing style
+        // Apply writing style
         result = applyWritingStyle(result)
+
+        // Restore snippet expansions from placeholders (undoes any style mangling)
+        for (placeholder, original) in snippetPlaceholders {
+            result = result.replacingOccurrences(of: placeholder, with: original)
+        }
 
         return result
     }
@@ -128,13 +136,17 @@ class TextFormatter {
 
     // MARK: - Snippet Expansions
 
-    private func applySnippetExpansions(_ text: String) -> String {
+    /// Replace snippet triggers with placeholder tokens so that downstream formatting
+    /// (writing style capitalization/punctuation) doesn't alter the expansion text.
+    /// The caller restores the real expansions after all style passes are done.
+    private func applySnippetExpansions(_ text: String, placeholders: inout [String: String]) -> String {
         guard let data = UserDefaults.standard.data(forKey: "snippets"),
               let snippets = try? JSONDecoder().decode([Snippet].self, from: data) else {
             return text
         }
 
         var result = text
+        var index = 0
         for snippet in snippets {
             let trigger = snippet.trigger.trimmingCharacters(in: .whitespacesAndNewlines)
             let expansion = snippet.expansion.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -142,11 +154,19 @@ class TextFormatter {
 
             let escaped = NSRegularExpression.escapedPattern(for: trigger)
             if let regex = TextFormatter.cachedRegex(pattern: "\\b\(escaped)\\b", options: .caseInsensitive) {
-                result = regex.stringByReplacingMatches(
-                    in: result,
-                    range: NSRange(result.startIndex..., in: result),
-                    withTemplate: NSRegularExpression.escapedTemplate(for: expansion)
-                )
+                let range = NSRange(result.startIndex..., in: result)
+                let matches = regex.numberOfMatches(in: result, range: range)
+                if matches > 0 {
+                    // Use a unique placeholder that won't be altered by style passes
+                    let placeholder = "\u{FFFC}SNIP\(index)\u{FFFC}"
+                    placeholders[placeholder] = expansion
+                    result = regex.stringByReplacingMatches(
+                        in: result,
+                        range: NSRange(result.startIndex..., in: result),
+                        withTemplate: NSRegularExpression.escapedTemplate(for: placeholder)
+                    )
+                    index += 1
+                }
             }
         }
 

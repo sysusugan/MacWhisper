@@ -7,6 +7,7 @@ class WhisperRecognizer: ObservableObject {
     @Published var isModelLoaded = false
     @Published var pipelineState: PipelineState = .notStarted
     @Published var availableModels: [String] = []
+    @Published var recommendedModel: String = ""
     @Published var selectedModel: String = "distil-whisper_distil-large-v3_turbo"
 
     private var whisperKit: WhisperKit?
@@ -88,7 +89,9 @@ class WhisperRecognizer: ObservableObject {
     }
 
     func fetchAvailableModels() {
-        let models = WhisperKit.recommendedModels().supported
+        let support = WhisperKit.recommendedModels()
+        recommendedModel = support.default
+        let models = support.supported
         if !models.isEmpty {
             availableModels = models
         } else {

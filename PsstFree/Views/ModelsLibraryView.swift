@@ -2,6 +2,17 @@ import SwiftUI
 
 struct ModelsLibraryView: View {
     @EnvironmentObject var appState: AppState
+    @State private var showAllModels = false
+
+    /// Models we surface by default — best balance of quality, speed, and size.
+    private static let curatedModels: [String] = [
+        "openai_whisper-large-v3-v20240930_turbo",
+        "openai_whisper-large-v3_turbo",
+        "distil-whisper_distil-large-v3_turbo",
+        "openai_whisper-small.en",
+        "openai_whisper-base.en",
+        "openai_whisper-tiny.en",
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -9,7 +20,7 @@ struct ModelsLibraryView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            Text("Select a Whisper model to use for transcription. Larger models are more accurate but use more memory.")
+            Text("Select a Whisper model for transcription. Larger models are more accurate but use more memory and are slower.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -19,14 +30,33 @@ struct ModelsLibraryView: View {
 
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    ForEach(modelList, id: \.self) { model in
+                    ForEach(displayedModels, id: \.self) { model in
                         ModelRow(
                             model: model,
-                            displayName: modelDisplayName(model),
-                            sizeEstimate: modelSizeEstimate(model),
+                            info: modelInfo(model),
                             isSelected: model == appState.whisperRecognizer.selectedModel,
+                            isRecommended: model == appState.whisperRecognizer.recommendedModel,
                             recognizer: appState.whisperRecognizer
                         )
+                    }
+
+                    if hasMoreModels {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showAllModels.toggle()
+                            }
+                        } label: {
+                            HStack {
+                                Text(showAllModels ? "Show fewer models" : "Show all \(allModels.count) models")
+                                    .font(.system(size: 12, weight: .medium))
+                                Image(systemName: showAllModels ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.accentColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -37,29 +67,95 @@ struct ModelsLibraryView: View {
         }
     }
 
-    private var modelList: [String] {
+    private var allModels: [String] {
         if !appState.whisperRecognizer.availableModels.isEmpty {
             return appState.whisperRecognizer.availableModels
         }
         return WhisperRecognizer.defaultModelList
     }
 
-    private func modelDisplayName(_ model: String) -> String {
-        model
-            .replacingOccurrences(of: "openai_whisper-", with: "")
-            .replacingOccurrences(of: "distil-whisper_distil-", with: "distil-")
+    private var displayedModels: [String] {
+        if showAllModels {
+            return allModels
+        }
+        // Show curated models (intersected with available), keeping curated order
+        let available = Set(allModels)
+        var result = Self.curatedModels.filter { available.contains($0) }
+        // Always include the currently selected model even if not curated
+        let selected = appState.whisperRecognizer.selectedModel
+        if !result.contains(selected) && available.contains(selected) {
+            result.append(selected)
+        }
+        return result
     }
 
-    private func modelSizeEstimate(_ model: String) -> String {
+    private var hasMoreModels: Bool {
+        displayedModels.count < allModels.count || showAllModels
+    }
+
+    // MARK: - Model Metadata
+
+    struct ModelInfo {
+        let displayName: String
+        let size: String
+        let description: String
+        let tier: ModelTier
+    }
+
+    enum ModelTier: String {
+        case best = "Best"
+        case balanced = "Balanced"
+        case fast = "Fast"
+        case compact = "Compact"
+    }
+
+    private func modelInfo(_ model: String) -> ModelInfo {
+        let displayName = model
+            .replacingOccurrences(of: "openai_whisper-", with: "")
+            .replacingOccurrences(of: "distil-whisper_distil-", with: "distil-")
+
         let lower = model.lowercased()
-        if lower.contains("tiny") { return "~75 MB" }
-        if lower.contains("base") { return "~140 MB" }
-        if lower.contains("small") { return "~460 MB" }
-        if lower.contains("medium") { return "~1.5 GB" }
-        if lower.contains("large") && lower.contains("turbo") { return "~800 MB" }
-        if lower.contains("large") { return "~3 GB" }
-        if lower.contains("distil") { return "~800 MB" }
-        return ""
+
+        if lower.contains("large-v3-v20240930") && lower.contains("turbo") {
+            return ModelInfo(displayName: displayName, size: "~800 MB", description: "Latest turbo, best quality + speed", tier: .best)
+        }
+        if lower.contains("large-v3") && lower.contains("turbo") && !lower.contains("distil") {
+            return ModelInfo(displayName: displayName, size: "~800 MB", description: "Fast, high accuracy", tier: .best)
+        }
+        if lower.contains("distil") && lower.contains("large") && lower.contains("turbo") {
+            return ModelInfo(displayName: displayName, size: "~800 MB", description: "Distilled turbo, English optimized", tier: .balanced)
+        }
+        if lower.contains("large-v3") && !lower.contains("turbo") {
+            return ModelInfo(displayName: displayName, size: "~3 GB", description: "Highest accuracy, slower", tier: .best)
+        }
+        if lower.contains("distil") && lower.contains("large") {
+            return ModelInfo(displayName: displayName, size: "~800 MB", description: "Distilled, English optimized", tier: .balanced)
+        }
+        if lower.contains("medium") && lower.contains(".en") {
+            return ModelInfo(displayName: displayName, size: "~1.5 GB", description: "Good accuracy, English only", tier: .balanced)
+        }
+        if lower.contains("medium") {
+            return ModelInfo(displayName: displayName, size: "~1.5 GB", description: "Good accuracy, multilingual", tier: .balanced)
+        }
+        if lower.contains("small") && lower.contains(".en") {
+            return ModelInfo(displayName: displayName, size: "~460 MB", description: "Lightweight, English only", tier: .fast)
+        }
+        if lower.contains("small") {
+            return ModelInfo(displayName: displayName, size: "~460 MB", description: "Lightweight, multilingual", tier: .fast)
+        }
+        if lower.contains("base") && lower.contains(".en") {
+            return ModelInfo(displayName: displayName, size: "~140 MB", description: "Minimal footprint, English only", tier: .compact)
+        }
+        if lower.contains("base") {
+            return ModelInfo(displayName: displayName, size: "~140 MB", description: "Minimal footprint, multilingual", tier: .compact)
+        }
+        if lower.contains("tiny") && lower.contains(".en") {
+            return ModelInfo(displayName: displayName, size: "~75 MB", description: "Fastest, basic accuracy", tier: .compact)
+        }
+        if lower.contains("tiny") {
+            return ModelInfo(displayName: displayName, size: "~75 MB", description: "Fastest, basic accuracy", tier: .compact)
+        }
+        return ModelInfo(displayName: displayName, size: "", description: "", tier: .balanced)
     }
 }
 
@@ -67,9 +163,9 @@ struct ModelsLibraryView: View {
 
 private struct ModelRow: View {
     let model: String
-    let displayName: String
-    let sizeEstimate: String
+    let info: ModelsLibraryView.ModelInfo
     let isSelected: Bool
+    let isRecommended: Bool
     @ObservedObject var recognizer: WhisperRecognizer
 
     private var isActive: Bool {
@@ -94,13 +190,34 @@ private struct ModelRow: View {
                 .frame(width: 20)
 
             // Model info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(displayName)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(info.displayName)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+
+                    if isRecommended {
+                        Text("Recommended")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.accentColor))
+                    }
+
+                    tierBadge
+                }
 
                 HStack(spacing: 6) {
-                    if !sizeEstimate.isEmpty {
-                        Text(sizeEstimate)
+                    if !info.size.isEmpty {
+                        Text(info.size)
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    if !info.description.isEmpty {
+                        Text("·")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text(info.description)
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
@@ -143,11 +260,29 @@ private struct ModelRow: View {
         }
     }
 
+    @ViewBuilder
+    private var tierBadge: some View {
+        if !isRecommended {
+            let color: Color = {
+                switch info.tier {
+                case .best: return .orange
+                case .balanced: return .blue
+                case .fast: return .green
+                case .compact: return .purple
+                }
+            }()
+            Text(info.tier.rawValue)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundColor(color)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1.5)
+                .background(Capsule().fill(color.opacity(0.12)))
+        }
+    }
+
     private func selectModel() {
-        // If this model is already selected and active/loading, do nothing on tap
         guard model != recognizer.selectedModel || isError else { return }
 
-        // Cancel any in-progress loading before switching
         if recognizer.pipelineState.isBusy {
             recognizer.cancelLoading()
         }
