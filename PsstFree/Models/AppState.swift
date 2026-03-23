@@ -192,6 +192,7 @@ class AppState: ObservableObject {
         permissionsGranted = true
 
         currentTranscription = ""
+        whisperRecognizer.resetChunkedState()  // Reset chunked state for new recording
         showOverlay = true
         audioLevelMonitor.mode = .recording
         RecordingOverlayController.shared.hide()  // dismiss any stale model-loading overlay

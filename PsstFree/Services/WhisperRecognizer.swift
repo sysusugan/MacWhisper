@@ -14,6 +14,16 @@ class WhisperRecognizer: ObservableObject {
     private var streamingTask: Task<Void, Never>?
     private var loadingTask: Task<Void, Never>?
 
+    // MARK: - Chunked Transcription State
+    // These track segment confirmation for efficient long recording support.
+    // Only the last N segments stay "unconfirmed" and may be revised as more audio arrives.
+    // Earlier segments are "confirmed" and their text is stable.
+    private var lastConfirmedSegmentEndSeconds: Float = 0
+    private var confirmedSegments: [TranscriptionSegment] = []
+    private var unconfirmedSegments: [TranscriptionSegment] = []
+    private var confirmedText: String = ""
+    private let requiredSegmentsForConfirmation: Int = 2
+
     /// Expose WhisperKit's AudioProcessor for proper audio capture with AVAudioConverter resampling
     var audioProcessor: (any AudioProcessing)? {
         whisperKit?.audioProcessor
@@ -157,6 +167,67 @@ class WhisperRecognizer: ObservableObject {
         resultCallback = onResult
     }
 
+    // MARK: - Chunked Transcription Methods
+
+    /// Reset chunked transcription state for a new recording session.
+    /// Call this at the start of each recording.
+    func resetChunkedState() {
+        lastConfirmedSegmentEndSeconds = 0
+        confirmedSegments = []
+        unconfirmedSegments = []
+        confirmedText = ""
+        print("WhisperRecognizer: Chunked state reset for new recording")
+    }
+
+    /// Finalize all remaining unconfirmed segments.
+    /// Call this when recording stops to include all pending segments in the final result.
+    func finalizeAllSegments() -> String {
+        if !unconfirmedSegments.isEmpty {
+            confirmedSegments.append(contentsOf: unconfirmedSegments)
+            unconfirmedSegments = []
+            print("WhisperRecognizer: Finalized \(confirmedSegments.count) total segments")
+        }
+        confirmedText = confirmedSegments.map { $0.text }.joined(separator: " ")
+        return confirmedText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Process transcription segments and manage confirmation state.
+    /// Confirms all but the last N segments to allow revision of recent audio.
+    private func processSegments(_ segments: [TranscriptionSegment]) {
+        if segments.count > requiredSegmentsForConfirmation {
+            // Confirm earlier segments, keep last N unconfirmed
+            let numberOfSegmentsToConfirm = segments.count - requiredSegmentsForConfirmation
+            let toConfirm = Array(segments.prefix(numberOfSegmentsToConfirm))
+            let remaining = Array(segments.suffix(requiredSegmentsForConfirmation))
+
+            // Only update if we're making forward progress
+            if let lastConfirmed = toConfirm.last, lastConfirmed.end > lastConfirmedSegmentEndSeconds {
+                lastConfirmedSegmentEndSeconds = lastConfirmed.end
+                print("WhisperRecognizer: Confirmed up to \(String(format: "%.2f", lastConfirmedSegmentEndSeconds))s")
+
+                // Add new confirmed segments (avoid duplicates by checking timestamps)
+                for segment in toConfirm {
+                    if !confirmedSegments.containsSegment(segment) {
+                        confirmedSegments.append(segment)
+                    }
+                }
+                confirmedText = confirmedSegments.map { $0.text }.joined(separator: " ")
+                print("WhisperRecognizer: \(confirmedSegments.count) confirmed, \(remaining.count) unconfirmed")
+            }
+            unconfirmedSegments = remaining
+        } else {
+            // Not enough segments to confirm any - all stay unconfirmed
+            unconfirmedSegments = segments
+        }
+    }
+
+    /// Build the current display text from confirmed + unconfirmed segments.
+    private func getCurrentDisplayText() -> String {
+        let unconfirmedText = unconfirmedSegments.map { $0.text }.joined(separator: " ")
+        let combined = (confirmedText + " " + unconfirmedText).trimmingCharacters(in: .whitespacesAndNewlines)
+        return combined
+    }
+
     /// Called from AppState after audio engine delivers a buffer.
     /// The actual buffer processing happens in AppState to avoid actor isolation issues.
     func handlePartialSamples(_ samples: [Float]) {
@@ -171,28 +242,55 @@ class WhisperRecognizer: ObservableObject {
         guard let whisperKit = whisperKit, !Task.isCancelled else { return }
 
         do {
+            // Use clipTimestamps to skip already-confirmed audio for efficiency.
+            // This prevents re-transcribing the entire buffer on long recordings.
             let options = DecodingOptions(
                 language: "en",
                 temperatureFallbackCount: 0,
                 sampleLength: 224,
                 usePrefillPrompt: true,
-                skipSpecialTokens: true
+                skipSpecialTokens: true,
+                wordTimestamps: true,
+                clipTimestamps: [lastConfirmedSegmentEndSeconds]
             )
+
             let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
-            if !Task.isCancelled, let text = results.first?.text, !text.isEmpty {
-                resultCallback?(text.trimmingCharacters(in: .whitespacesAndNewlines))
+
+            guard !Task.isCancelled, let result = results.first else { return }
+
+            let segments = result.segments
+
+            // Handle case where no segments returned (very short audio or silence)
+            if segments.isEmpty {
+                // Fall back to raw text for very short recordings
+                if !result.text.isEmpty {
+                    let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    // Still deliver via callback even without segments
+                    let displayText = (confirmedText + " " + text).trimmingCharacters(in: .whitespacesAndNewlines)
+                    resultCallback?(displayText)
+                }
+                return
+            }
+
+            // Process segments through confirmation logic
+            processSegments(segments)
+
+            // Deliver combined confirmed + unconfirmed text
+            let displayText = getCurrentDisplayText()
+            if !displayText.isEmpty {
+                resultCallback?(displayText)
             }
         } catch {
             if !Task.isCancelled {
                 print("WhisperRecognizer: Partial transcription error - \(error)")
+                // Don't reset chunked state on transient errors - preserve confirmed text
             }
         }
     }
 
     /// Stop recording. Waits for any in-flight partial to finish (which transcribes
-    /// the full buffer), then returns its result. No second transcription call.
+    /// the full buffer), then finalizes all segments and returns the complete transcription.
     func finishRecognition() async -> String {
-
         // Don't nil the callback yet — let the streaming task deliver its final result
         // If a streaming task is running, wait for it to complete (don't cancel —
         // let it finish so we get the most complete transcription)
@@ -204,10 +302,23 @@ class WhisperRecognizer: ObservableObject {
         // Now nil the callback since we're done delivering results
         resultCallback = nil
 
-        // The last successful partial result was already delivered via resultCallback
-        // which updated currentTranscription in AppState. Return empty to signal
-        // "use currentTranscription".
-        return ""
+        // Finalize all remaining unconfirmed segments and return the complete text
+        let finalText = finalizeAllSegments()
+        print("WhisperRecognizer: Recording finished with \(confirmedSegments.count) total segments")
+        return finalText
+    }
+}
+
+// MARK: - Array Extension for Segment Containment
+
+extension Array where Element == TranscriptionSegment {
+    /// Check if array contains a segment with matching timestamps (within tolerance).
+    /// Uses timestamp comparison rather than exact equality since segment text may have been cleaned.
+    func containsSegment(_ segment: TranscriptionSegment, tolerance: Float = 0.1) -> Bool {
+        return self.contains { existing in
+            abs(existing.start - segment.start) < tolerance &&
+            abs(existing.end - segment.end) < tolerance
+        }
     }
 }
 
