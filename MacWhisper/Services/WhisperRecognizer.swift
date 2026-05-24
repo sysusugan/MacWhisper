@@ -117,6 +117,32 @@ class WhisperRecognizer: ObservableObject {
         } else {
             availableModels = Self.defaultModelList
         }
+
+        let resolvedModel = Self.resolveSelectedModel(
+            savedModel: selectedModel,
+            availableModels: availableModels
+        )
+        if resolvedModel != selectedModel {
+            selectedModel = resolvedModel
+            saveSelectedModel()
+        }
+    }
+
+    nonisolated static func resolveSelectedModel(savedModel: String?, availableModels: [String]) -> String {
+        let resolved = resolveSelectedModel(savedModel: savedModel)
+        guard !availableModels.isEmpty else {
+            return resolved
+        }
+
+        if availableModels.contains(resolved) {
+            return resolved
+        }
+
+        if availableModels.contains(defaultModel) {
+            return defaultModel
+        }
+
+        return resolved
     }
 
     /// Cancel the current model loading task

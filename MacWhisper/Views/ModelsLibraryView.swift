@@ -87,7 +87,7 @@ struct ModelsLibraryView: View {
         var result = Self.curatedModels.filter { available.contains($0) }
         // Always include the currently selected model even if not curated
         let selected = appState.whisperRecognizer.selectedModel
-        if !result.contains(selected) && available.contains(selected) {
+        if !result.contains(selected) {
             result.append(selected)
         }
         return result
@@ -369,9 +369,7 @@ private struct ModelsLibraryStatusBanner: View {
                 HStack {
                     Image(systemName: "arrow.down.circle")
                         .foregroundColor(.secondary)
-                    Text("模型未下载")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    modelStatusText("模型未下载", color: .secondary)
                     Spacer()
                     Button("下载并加载") {
                         recognizer.loadModel()
@@ -382,9 +380,7 @@ private struct ModelsLibraryStatusBanner: View {
             case .downloading:
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("正在下载并加载模型...")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        modelStatusText("正在下载并加载模型...", color: .secondary)
                         Spacer()
                         Button("取消") {
                             recognizer.cancelLoading()
@@ -399,9 +395,7 @@ private struct ModelsLibraryStatusBanner: View {
             case .downloaded:
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("已下载，正在准备...")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        modelStatusText("已下载，正在准备...", color: .secondary)
                         Spacer()
                         Button("取消") {
                             recognizer.cancelLoading()
@@ -416,9 +410,7 @@ private struct ModelsLibraryStatusBanner: View {
             case .loading:
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("正在将模型加载到内存...")
-                            .font(.caption)
-                            .foregroundColor(.orange)
+                        modelStatusText("正在将模型加载到内存...", color: .orange)
                         Spacer()
                         Button("取消") {
                             recognizer.cancelLoading()
@@ -433,9 +425,7 @@ private struct ModelsLibraryStatusBanner: View {
             case .specializing:
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("正在为你的 Mac 优化...")
-                            .font(.caption)
-                            .foregroundColor(.orange)
+                        modelStatusText("正在为你的 Mac 优化...", color: .orange)
                         Spacer()
                         Button("取消") {
                             recognizer.cancelLoading()
@@ -451,9 +441,7 @@ private struct ModelsLibraryStatusBanner: View {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
-                    Text("已就绪")
-                        .font(.caption)
-                        .foregroundColor(.green)
+                    modelStatusText("已就绪", color: .green)
                     Spacer()
                 }
 
@@ -476,9 +464,7 @@ private struct ModelsLibraryStatusBanner: View {
                 HStack {
                     Image(systemName: "xmark.circle")
                         .foregroundColor(.secondary)
-                    Text("已取消加载")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    modelStatusText("已取消加载", color: .secondary)
                     Spacer()
                     Button("加载") {
                         recognizer.loadModel()
@@ -489,5 +475,23 @@ private struct ModelsLibraryStatusBanner: View {
         }
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.06)))
+    }
+
+    private func modelStatusText(_ status: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(status)
+                .font(.caption)
+                .foregroundColor(color)
+            Text("当前模型：\(displayModelName(recognizer.selectedModel))")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func displayModelName(_ model: String) -> String {
+        model
+            .replacingOccurrences(of: "openai_whisper-", with: "")
+            .replacingOccurrences(of: "distil-whisper_distil-", with: "distil-")
     }
 }

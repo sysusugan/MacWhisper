@@ -30,4 +30,24 @@ final class WhisperModelSelectionTests: XCTestCase {
             "openai_whisper-small.en"
         )
     }
+
+    func testUnavailableSavedModelFallsBackToDefaultWhenAvailable() {
+        XCTAssertEqual(
+            WhisperRecognizer.resolveSelectedModel(
+                savedModel: "large-v2_turbo",
+                availableModels: ["large-v3_turbo", "large-v3"]
+            ),
+            WhisperRecognizer.defaultModel
+        )
+    }
+
+    func testAvailableSavedModelIsPreserved() {
+        XCTAssertEqual(
+            WhisperRecognizer.resolveSelectedModel(
+                savedModel: "large-v3_947MB",
+                availableModels: ["large-v3_turbo", "large-v3_947MB"]
+            ),
+            "large-v3_947MB"
+        )
+    }
 }

@@ -19,10 +19,8 @@ struct MenuBarView: View {
 
         // Model loading status
         if appState.whisperRecognizer.pipelineState.isBusy {
-            HStack {
-                Text(appState.whisperRecognizer.pipelineState.statusText)
-                    .font(.caption)
-            }
+            Text("\(appState.whisperRecognizer.pipelineState.statusText)：\(currentModelName)")
+                .font(.caption)
             Button("取消加载") {
                 appState.whisperRecognizer.cancelLoading()
             }
@@ -172,5 +170,11 @@ struct MenuBarView: View {
             }
         }
         return "样式：\(styleName)"
+    }
+
+    private var currentModelName: String {
+        appState.whisperRecognizer.selectedModel
+            .replacingOccurrences(of: "openai_whisper-", with: "")
+            .replacingOccurrences(of: "distil-whisper_distil-", with: "distil-")
     }
 }
