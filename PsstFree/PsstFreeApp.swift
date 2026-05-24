@@ -3,7 +3,22 @@ import Cocoa
 
 @main
 struct PsstFreeApp: App {
-    @StateObject private var appState = AppState()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var appState: AppState
+
+    init() {
+        let state = AppState()
+        _appState = StateObject(wrappedValue: state)
+        SettingsRequestHandler.shared.openSettings = {
+            SettingsWindowController.shared.open(appState: state)
+        }
+
+        if ProcessInfo.processInfo.arguments.contains("--open-settings") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                SettingsRequestHandler.shared.open()
+            }
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -13,6 +28,26 @@ struct PsstFreeApp: App {
             Image(systemName: appState.isRecording ? "record.circle.fill" : "mic")
         }
         .menuBarExtraStyle(.menu)
+    }
+}
+
+@MainActor
+final class SettingsRequestHandler {
+    static let shared = SettingsRequestHandler()
+
+    var openSettings: (() -> Void)?
+
+    func open() {
+        openSettings?()
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard urls.contains(where: { $0.scheme == "psstfree" && $0.host == "settings" }) else { return }
+        Task { @MainActor in
+            SettingsRequestHandler.shared.open()
+        }
     }
 }
 

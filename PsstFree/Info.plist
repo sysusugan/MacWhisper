@@ -16,6 +16,17 @@
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>PsstFree</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.psst.free</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>psstfree</string>
+            </array>
+        </dict>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>

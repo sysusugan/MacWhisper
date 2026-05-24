@@ -14,6 +14,7 @@ class WhisperRecognizer: ObservableObject {
     private var resultCallback: ((String) -> Void)?
     private var streamingTask: Task<Void, Never>?
     private var loadingTask: Task<Void, Never>?
+    private var transcriptionGeneration = 0
 
     // MARK: - Chunked Transcription State
     // These track segment confirmation for efficient long recording support.
@@ -175,6 +176,9 @@ class WhisperRecognizer: ObservableObject {
     /// Reset chunked transcription state for a new recording session.
     /// Call this at the start of each recording.
     func resetChunkedState() {
+        transcriptionGeneration += 1
+        streamingTask?.cancel()
+        streamingTask = nil
         lastConfirmedSegmentEndSeconds = 0
         confirmedSegments = []
         unconfirmedSegments = []
@@ -234,16 +238,24 @@ class WhisperRecognizer: ObservableObject {
     /// Called from AppState after audio engine delivers a buffer.
     /// The actual buffer processing happens in AppState to avoid actor isolation issues.
     func handlePartialSamples(_ samples: [Float]) {
+        guard let whisperKit = whisperKit else { return }
+
+        let generation = transcriptionGeneration
+        let clipStart = lastConfirmedSegmentEndSeconds
+
         streamingTask?.cancel()
-        streamingTask = Task { [weak self] in
-            guard let self = self else { return }
-            await self.transcribePartial(samples)
+        streamingTask = Task.detached(priority: .userInitiated) { [weak self, whisperKit] in
+            await self?.transcribePartial(samples, using: whisperKit, clipStart: clipStart, generation: generation)
         }
     }
 
-    private func transcribePartial(_ samples: [Float]) async {
-        guard let whisperKit = whisperKit, !Task.isCancelled else { return }
-
+    nonisolated private func transcribePartial(
+        _ samples: [Float],
+        using whisperKit: WhisperKit,
+        clipStart: Float,
+        generation: Int
+    ) async {
+        guard !Task.isCancelled else { return }
         do {
             // Use clipTimestamps to skip already-confirmed audio for efficiency.
             // This prevents re-transcribing the entire buffer on long recordings.
@@ -254,40 +266,47 @@ class WhisperRecognizer: ObservableObject {
                 usePrefillPrompt: true,
                 skipSpecialTokens: true,
                 wordTimestamps: true,
-                clipTimestamps: [lastConfirmedSegmentEndSeconds]
+                clipTimestamps: [clipStart]
             )
 
             let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
 
             guard !Task.isCancelled, let result = results.first else { return }
-
-            let segments = result.segments
-
-            // Handle case where no segments returned (very short audio or silence)
-            if segments.isEmpty {
-                // Fall back to raw text for very short recordings
-                if !result.text.isEmpty {
-                    let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                    // Still deliver via callback even without segments
-                    let displayText = (confirmedText + " " + text).trimmingCharacters(in: .whitespacesAndNewlines)
-                    resultCallback?(displayText)
-                }
-                return
-            }
-
-            // Process segments through confirmation logic
-            processSegments(segments)
-
-            // Deliver combined confirmed + unconfirmed text
-            let displayText = getCurrentDisplayText()
-            if !displayText.isEmpty {
-                resultCallback?(displayText)
+            await MainActor.run { [weak self] in
+                self?.applyPartialResult(result, generation: generation)
             }
         } catch {
             if !Task.isCancelled {
                 print("WhisperRecognizer: Partial transcription error - \(error)")
                 // Don't reset chunked state on transient errors - preserve confirmed text
             }
+        }
+    }
+
+    private func applyPartialResult(_ result: TranscriptionResult, generation: Int) {
+        guard generation == transcriptionGeneration else { return }
+
+        let segments = result.segments
+
+        // Handle case where no segments returned (very short audio or silence)
+        if segments.isEmpty {
+            // Fall back to raw text for very short recordings
+            if !result.text.isEmpty {
+                let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                // Still deliver via callback even without segments
+                let displayText = (confirmedText + " " + text).trimmingCharacters(in: .whitespacesAndNewlines)
+                resultCallback?(displayText)
+            }
+            return
+        }
+
+        // Process segments through confirmation logic
+        processSegments(segments)
+
+        // Deliver combined confirmed + unconfirmed text
+        let displayText = getCurrentDisplayText()
+        if !displayText.isEmpty {
+            resultCallback?(displayText)
         }
     }
 
@@ -324,4 +343,3 @@ extension Array where Element == TranscriptionSegment {
         }
     }
 }
-
