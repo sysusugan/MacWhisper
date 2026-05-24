@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-APP_NAME="Psst Free"
-BUNDLE_NAME="PsstFree"
+APP_NAME="MacWhisper"
+BUNDLE_NAME="MacWhisper"
 BUILD_DIR=".build/debug"
 APP_DIR="dist-dev/${APP_NAME}.app"
-CERT_NAME="PsstFree Dev"
+CERT_NAME="MacWhisper Dev"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -56,11 +56,14 @@ mkdir -p "${APP_DIR}/Contents/Resources"
 cp "${BUILD_DIR}/${BUNDLE_NAME}" "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
 # Copy Info.plist
-cp PsstFree/Info.plist "${APP_DIR}/Contents/Info.plist"
+cp MacWhisper/Info.plist "${APP_DIR}/Contents/Info.plist"
 
 # Copy Resources (if any compiled resources exist)
-if [ -d "${BUILD_DIR}/PsstFree_PsstFree.bundle" ]; then
-    cp -R "${BUILD_DIR}/PsstFree_PsstFree.bundle" "${APP_DIR}/Contents/Resources/"
+if [ -d "${BUILD_DIR}/MacWhisper_MacWhisper.bundle" ]; then
+    cp -R "${BUILD_DIR}/MacWhisper_MacWhisper.bundle" "${APP_DIR}/Contents/Resources/"
+fi
+if [ -f "MacWhisper/Resources/MacWhisper.icns" ]; then
+    cp "MacWhisper/Resources/MacWhisper.icns" "${APP_DIR}/Contents/Resources/"
 fi
 
 # Copy Sparkle.framework into Frameworks/
@@ -77,11 +80,11 @@ install_name_tool -add_rpath @executable_path/../Frameworks "${APP_DIR}/Contents
 echo ""
 echo "=== Signing app with '$CERT_NAME' ==="
 codesign --force --sign "$CERT_NAME" \
-    --entitlements PsstFree/PsstFree.entitlements \
+    --entitlements MacWhisper/MacWhisper.entitlements \
     "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
 codesign --force --sign "$CERT_NAME" \
-    --entitlements PsstFree/PsstFree.entitlements \
+    --entitlements MacWhisper/MacWhisper.entitlements \
     "${APP_DIR}"
 
 # Step 6: Verify signature
@@ -105,7 +108,7 @@ echo "(Accessibility, Input Monitoring) will persist across rebuilds."
 if [ "$RUN_AFTER_BUILD" = true ]; then
     echo ""
     echo "=== Killing old instance ==="
-    pkill -x PsstFree 2>/dev/null && sleep 0.5 || true
+    pkill -x MacWhisper 2>/dev/null && sleep 0.5 || true
     echo "=== Launching app ==="
     open "${APP_DIR}"
 fi

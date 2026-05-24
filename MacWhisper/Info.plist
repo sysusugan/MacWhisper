@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>MacWhisper</string>
+    <key>CFBundleDisplayName</key>
+    <string>MacWhisper</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.macwhisper.app</string>
+    <key>CFBundleVersion</key>
+    <string>2</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>MacWhisper</string>
+    <key>CFBundleIconFile</key>
+    <string>MacWhisper</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.macwhisper.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>macwhisper</string>
+                <string>psstfree</string>
+            </array>
+        </dict>
+    </array>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>MacWhisper needs microphone access to transcribe your speech.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>MacWhisper uses speech recognition to convert your voice to text.</string>
+    <key>SUFeedURL</key>
+    <string>https://psstfree.com/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>SPARKLE_ED25519_PUBLIC_KEY_PLACEHOLDER</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+</dict>
+</plist>

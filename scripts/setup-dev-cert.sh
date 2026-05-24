@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-CERT_NAME="PsstFree Dev"
+CERT_NAME="MacWhisper Dev"
 
-echo "=== PsstFree Dev Certificate Setup ==="
+echo "=== MacWhisper Dev Certificate Setup ==="
 echo ""
 
 # Check if the certificate already exists
@@ -56,7 +56,7 @@ openssl req -new -x509 -key "$KEY_FILE" \
 
 # 3. Export as .p12
 echo "  -> Exporting as .p12..."
-P12_PASS="psstfree-dev"
+P12_PASS="macwhisper-dev"
 openssl pkcs12 -export \
     -inkey "$KEY_FILE" \
     -in "$CERT_FILE" \

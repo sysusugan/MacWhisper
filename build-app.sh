@@ -25,14 +25,14 @@
 # =============================================================================
 set -e
 
-APP_NAME="Psst Free"
-BUNDLE_NAME="PsstFree"
+APP_NAME="MacWhisper"
+BUNDLE_NAME="MacWhisper"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-VERSION=$(defaults read "$(pwd)/PsstFree/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")
-DMG_NAME="PsstFree-${VERSION}"
+VERSION=$(defaults read "$(pwd)/MacWhisper/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")
+DMG_NAME="MacWhisper-${VERSION}"
 
-echo "=== Building Psst Free v${VERSION} ==="
+echo "=== Building MacWhisper v${VERSION} ==="
 
 # Determine signing mode
 if [ -n "$DEVELOPER_ID" ]; then
@@ -58,11 +58,14 @@ mkdir -p "${APP_DIR}/Contents/Frameworks"
 cp "${BUILD_DIR}/${BUNDLE_NAME}" "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
 # Copy Info.plist
-cp PsstFree/Info.plist "${APP_DIR}/Contents/Info.plist"
+cp MacWhisper/Info.plist "${APP_DIR}/Contents/Info.plist"
 
 # Copy Resources (if any compiled resources exist)
-if [ -d "${BUILD_DIR}/PsstFree_PsstFree.bundle" ]; then
-    cp -R "${BUILD_DIR}/PsstFree_PsstFree.bundle" "${APP_DIR}/Contents/Resources/"
+if [ -d "${BUILD_DIR}/MacWhisper_MacWhisper.bundle" ]; then
+    cp -R "${BUILD_DIR}/MacWhisper_MacWhisper.bundle" "${APP_DIR}/Contents/Resources/"
+fi
+if [ -f "MacWhisper/Resources/MacWhisper.icns" ]; then
+    cp "MacWhisper/Resources/MacWhisper.icns" "${APP_DIR}/Contents/Resources/"
 fi
 
 # Copy dynamic frameworks linked by SwiftPM.
@@ -98,12 +101,12 @@ if [ "$SIGN_MODE" = "developer-id" ]; then
 
     codesign --force --options runtime --timestamp \
         --sign "$DEVELOPER_ID" \
-        --entitlements PsstFree/PsstFree.entitlements \
+        --entitlements MacWhisper/MacWhisper.entitlements \
         "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
     codesign --force --options runtime --timestamp \
         --sign "$DEVELOPER_ID" \
-        --entitlements PsstFree/PsstFree.entitlements \
+        --entitlements MacWhisper/MacWhisper.entitlements \
         "${APP_DIR}"
 else
     # Ad-hoc signing (local testing only)
@@ -111,11 +114,11 @@ else
         "${APP_DIR}/Contents/Frameworks/Sparkle.framework"
 
     codesign --force --sign - \
-        --entitlements PsstFree/PsstFree.entitlements \
+        --entitlements MacWhisper/MacWhisper.entitlements \
         "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
 
     codesign --force --sign - \
-        --entitlements PsstFree/PsstFree.entitlements \
+        --entitlements MacWhisper/MacWhisper.entitlements \
         "${APP_DIR}"
 fi
 

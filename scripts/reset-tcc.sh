@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Development helper: Reset TCC (Transparency, Consent, and Control) database
-# entries for Psst Free to prevent stale permission prompts after rebuilds.
+# entries for MacWhisper to prevent stale permission prompts after rebuilds.
 #
 # Usage:
 #   ./scripts/reset-tcc.sh         # Reset Accessibility, Input Monitoring, ScreenCapture
@@ -11,7 +11,7 @@
 # your macOS version and SIP configuration. If you get "not modified" results,
 # try: sudo ./scripts/reset-tcc.sh
 
-BUNDLE_ID="com.psst.free"
+BUNDLE_ID="com.macwhisper.app"
 
 echo "Resetting TCC entries for ${BUNDLE_ID}..."
 

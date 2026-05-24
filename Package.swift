@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "PsstFree",
+    name: "MacWhisper",
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0"),
@@ -10,15 +10,15 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "PsstFree",
+            name: "MacWhisper",
             dependencies: [
                 .product(name: "WhisperKit", package: "WhisperKit"),
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
-            path: "PsstFree",
+            path: "MacWhisper",
             exclude: [
                 "Info.plist",
-                "PsstFree.entitlements",
+                "MacWhisper.entitlements",
             ],
             resources: [
                 .process("Resources"),
@@ -28,6 +28,10 @@ let package = Package(
                 .linkedFramework("Carbon"),
                 .linkedFramework("NaturalLanguage"),
             ]
+        ),
+        .testTarget(
+            name: "MacWhisperTests",
+            dependencies: ["MacWhisper"]
         ),
     ]
 )
