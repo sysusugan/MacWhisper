@@ -52,6 +52,7 @@ echo "=== Creating .app bundle ==="
 rm -rf dist
 mkdir -p "${APP_DIR}/Contents/MacOS"
 mkdir -p "${APP_DIR}/Contents/Resources"
+mkdir -p "${APP_DIR}/Contents/Frameworks"
 
 # Copy binary
 cp "${BUILD_DIR}/${BUNDLE_NAME}" "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
@@ -64,11 +65,37 @@ if [ -d "${BUILD_DIR}/PsstFree_PsstFree.bundle" ]; then
     cp -R "${BUILD_DIR}/PsstFree_PsstFree.bundle" "${APP_DIR}/Contents/Resources/"
 fi
 
+# Copy dynamic frameworks linked by SwiftPM.
+SPARKLE_FRAMEWORK=""
+for candidate in \
+    ".build/arm64-apple-macosx/release/Sparkle.framework" \
+    ".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+do
+    if [ -d "$candidate" ]; then
+        SPARKLE_FRAMEWORK="$candidate"
+        break
+    fi
+done
+
+if [ -z "$SPARKLE_FRAMEWORK" ]; then
+    echo "ERROR: Sparkle.framework not found. Run 'swift build -c release' first." >&2
+    exit 1
+fi
+
+cp -R "$SPARKLE_FRAMEWORK" "${APP_DIR}/Contents/Frameworks/"
+if ! otool -l "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}" | grep -q "@executable_path/../Frameworks"; then
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
+fi
+
 # --- Code Signing ---
 echo "=== Signing app ==="
 
 if [ "$SIGN_MODE" = "developer-id" ]; then
     # Developer ID signing with hardened runtime (required for notarization)
+    codesign --force --options runtime --timestamp \
+        --sign "$DEVELOPER_ID" \
+        "${APP_DIR}/Contents/Frameworks/Sparkle.framework"
+
     codesign --force --options runtime --timestamp \
         --sign "$DEVELOPER_ID" \
         --entitlements PsstFree/PsstFree.entitlements \
@@ -80,6 +107,9 @@ if [ "$SIGN_MODE" = "developer-id" ]; then
         "${APP_DIR}"
 else
     # Ad-hoc signing (local testing only)
+    codesign --force --sign - \
+        "${APP_DIR}/Contents/Frameworks/Sparkle.framework"
+
     codesign --force --sign - \
         --entitlements PsstFree/PsstFree.entitlements \
         "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}"
@@ -96,17 +126,21 @@ codesign -d --entitlements - "${APP_DIR}/Contents/MacOS/${BUNDLE_NAME}" 2>&1 || 
 
 # --- Create DMG ---
 echo "=== Creating DMG ==="
-DMG_TEMP="dist/dmg_temp"
-mkdir -p "${DMG_TEMP}"
-cp -R "${APP_DIR}" "${DMG_TEMP}/"
-ln -s /Applications "${DMG_TEMP}/Applications"
+if [ "$SKIP_DMG" = "1" ]; then
+    echo "Skipping DMG creation because SKIP_DMG=1"
+else
+    DMG_TEMP="dist/dmg_temp"
+    mkdir -p "${DMG_TEMP}"
+    cp -R "${APP_DIR}" "${DMG_TEMP}/"
+    ln -s /Applications "${DMG_TEMP}/Applications"
 
-hdiutil create -volname "${APP_NAME}" \
-    -srcfolder "${DMG_TEMP}" \
-    -ov -format UDZO \
-    "dist/${DMG_NAME}.dmg"
+    hdiutil create -volname "${APP_NAME}" \
+        -srcfolder "${DMG_TEMP}" \
+        -ov -format UDZO \
+        "dist/${DMG_NAME}.dmg"
 
-rm -rf "${DMG_TEMP}"
+    rm -rf "${DMG_TEMP}"
+fi
 
 # --- Notarization (Developer ID only) ---
 if [ "$SIGN_MODE" = "developer-id" ]; then
@@ -137,7 +171,11 @@ fi
 echo ""
 echo "=== Done! ==="
 echo "App:     dist/${APP_NAME}.app"
-echo "DMG:     dist/${DMG_NAME}.dmg"
+if [ "$SKIP_DMG" = "1" ]; then
+    echo "DMG:     skipped"
+else
+    echo "DMG:     dist/${DMG_NAME}.dmg"
+fi
 echo "Version: ${VERSION}"
 echo ""
 if [ "$SIGN_MODE" = "adhoc" ]; then
